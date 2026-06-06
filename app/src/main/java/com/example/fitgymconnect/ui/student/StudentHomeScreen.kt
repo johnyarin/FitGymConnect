@@ -38,6 +38,7 @@ fun StudentHomeScreen(
     val nextBooking: Booking? = when (bookingState) {
         is BookingUiState.Success -> (bookingState as BookingUiState.Success).bookings
             .filter { it.status != "cancelled" }
+            .sortedWith(compareBy(nullsLast(naturalOrder())) { it.gym_class?.scheduled_at })
             .firstOrNull()
         else -> null
     }
@@ -94,14 +95,10 @@ fun StudentHomeScreen(
 
         // Próxima clase
         item {
-            HomeSectionHeader(title = "Próxima clase", actionLabel = "Ver clases", onAction = onNavigateToClases)
+            HomeSectionHeader(title = "Próxima clase")
             Spacer(Modifier.height(8.dp))
             if (nextBooking == null) {
-                HomeEmptyCard(
-                    text = "No tienes reservas activas",
-                    actionLabel = "Explorar clases",
-                    onAction = onNavigateToClases
-                )
+                HomeEmptyCard(text = "No tienes reservas activas")
             } else {
                 NextBookingCard(booking = nextBooking)
             }
@@ -109,7 +106,7 @@ fun StudentHomeScreen(
 
         // Rutinas
         item {
-            HomeSectionHeader(title = "Rutinas para ti", actionLabel = "Ver todas", onAction = onNavigateToRutinas)
+            HomeSectionHeader(title = "Rutinas para ti")
             Spacer(Modifier.height(8.dp))
             if (previewRoutines.isEmpty()) {
                 HomeEmptyCard(
@@ -129,17 +126,19 @@ fun StudentHomeScreen(
 }
 
 @Composable
-private fun HomeSectionHeader(title: String, actionLabel: String, onAction: () -> Unit) {
+private fun HomeSectionHeader(title: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        TextButton(onClick = onAction) {
-            Text(actionLabel, style = MaterialTheme.typography.labelMedium)
+        if (actionLabel != null) {
+            TextButton(onClick = onAction) {
+                Text(actionLabel, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
 
 @Composable
-private fun HomeEmptyCard(text: String, actionLabel: String, onAction: () -> Unit) {
+private fun HomeEmptyCard(text: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -150,7 +149,9 @@ private fun HomeEmptyCard(text: String, actionLabel: String, onAction: () -> Uni
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            TextButton(onClick = onAction) { Text(actionLabel) }
+            if (actionLabel != null) {
+                TextButton(onClick = onAction) { Text(actionLabel) }
+            }
         }
     }
 }
@@ -213,7 +214,7 @@ private fun CompactRoutineCard(routine: Routine) {
         "advanced"     -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         else           -> MaterialTheme.colorScheme.surface
     }
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(1.dp),
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)) {
         Row(
             modifier = Modifier.padding(12.dp),

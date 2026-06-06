@@ -1,5 +1,7 @@
 package com.example.fitgymconnect.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class LoginRequest(val email: String, val password: String)
 
 data class RegisterRequest(
@@ -37,8 +39,8 @@ data class GymClass(
     val title: String,
     val description: String?,
     val type: String?,
-    val scheduled_at: String?,
-    val max_capacity: Int?,
+    @SerializedName("date") val scheduled_at: String?,
+    @SerializedName("max_students") val max_capacity: Int?,
     val price: Double?,
     val meet_link: String?,
     val trainer_id: Int?,
@@ -50,7 +52,7 @@ data class TrainerProfile(
     val id: Int,
     val user_id: Int?,
     val bio: String?,
-    val specialty: String?,
+    @SerializedName("speciality") val specialty: String?,
     val photo: String?,
     val user: User?
 )

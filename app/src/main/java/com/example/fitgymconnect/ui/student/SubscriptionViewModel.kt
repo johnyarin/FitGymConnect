@@ -41,7 +41,7 @@ class SubscriptionViewModel @Inject constructor(
         _state.value = SubscriptionUiState.Loading
         _state.value = when (val r = repo.getSubscription()) {
             is Result.Success -> if (r.data != null && r.data.id > 0) SubscriptionUiState.Active(r.data) else SubscriptionUiState.NoSubscription
-            is Result.Error   -> SubscriptionUiState.NoSubscription
+            is Result.Error   -> SubscriptionUiState.Error(r.message)
         }
     }
 

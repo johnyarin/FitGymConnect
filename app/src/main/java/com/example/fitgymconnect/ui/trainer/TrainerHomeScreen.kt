@@ -87,12 +87,6 @@ fun TrainerHomeScreen(
                         Text("${myRoutines.size}", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
                         Text("Rutinas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    VerticalDivider(modifier = Modifier.height(40.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        val totalBookings = myClasses.sumOf { it.bookings_count ?: 0 }
-                        Text("$totalBookings", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-                        Text("Alumnos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
                 }
             }
         }
@@ -209,7 +203,7 @@ private fun TrainerCompactRoutineCard(routine: Routine) {
         "advanced"     -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         else           -> MaterialTheme.colorScheme.surface
     }
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(1.dp),
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)) {
         Row(
             modifier = Modifier.padding(12.dp),

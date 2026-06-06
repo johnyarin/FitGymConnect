@@ -133,7 +133,7 @@ fun RoutineCard(routine: Routine, hasActiveSubscription: Boolean = true) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

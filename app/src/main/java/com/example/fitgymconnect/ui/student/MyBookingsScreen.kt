@@ -107,7 +107,7 @@ fun BookingCard(booking: Booking, isProcessing: Boolean, onCancel: () -> Unit) {
         else         -> MaterialTheme.colorScheme.surface
     }
 
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp),
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)) {
         Column(modifier = Modifier.padding(16.dp)) {
 

@@ -83,7 +83,8 @@ fun StudentMainScreen(onLogout: () -> Unit) {
             composable("perfil") {
                 StudentProfileScreen(
                     onLogout = onLogout,
-                    subscriptionViewModel = subscriptionViewModel
+                    subscriptionViewModel = subscriptionViewModel,
+                    bookingViewModel = bookingViewModel
                 )
             }
         }

@@ -3,7 +3,6 @@ package com.example.fitgymconnect.ui.shared
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -39,7 +38,6 @@ fun ClassesScreen(
     val processingIds by bookingViewModel.processingIds.collectAsState()
     val message       by bookingViewModel.message.collectAsState()
     val context = LocalContext.current
-    var selectedType by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(message) {
         message?.let {
@@ -69,9 +67,6 @@ fun ClassesScreen(
             var classes = (classState as ClassUiState.Success).classes
             if (filterByUserId != null) classes = classes.filter { it.trainer?.user_id == filterByUserId }
 
-            val types = classes.mapNotNull { it.type }.distinct()
-            val filtered = if (selectedType == null) classes else classes.filter { it.type == selectedType }
-
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -81,28 +76,7 @@ fun ClassesScreen(
                     Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 4.dp))
                 }
 
-                if (types.isNotEmpty()) {
-                    item {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                FilterChip(
-                                    selected = selectedType == null,
-                                    onClick = { selectedType = null },
-                                    label = { Text("Todas") }
-                                )
-                            }
-                            items(types, key = { it }) { type ->
-                                FilterChip(
-                                    selected = selectedType == type,
-                                    onClick = { selectedType = if (selectedType == type) null else type },
-                                    label = { Text(if (type == "online") "Online" else "Presencial") }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (filtered.isEmpty()) {
+                if (classes.isEmpty()) {
                     item {
                         Column(
                             modifier = Modifier
@@ -118,25 +92,19 @@ fun ClassesScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                             )
                             Text(
-                                when (selectedType) {
-                                    "online"     -> "No hay clases online disponibles"
-                                    "presencial" -> "No hay clases presenciales disponibles"
-                                    else         -> "Aún no hay clases disponibles"
-                                },
+                                "Aún no hay clases disponibles",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (selectedType == null) {
-                                Text(
-                                    "Los entrenadores irán publicando clases pronto",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                            }
+                            Text(
+                                "Los entrenadores irán publicando clases pronto",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
                         }
                     }
                 } else {
-                    items(filtered, key = { it.id }) { gymClass ->
+                    items(classes, key = { it.id }) { gymClass ->
                         ClassCard(
                             gymClass = gymClass,
                             showBookingButton = showBookingButton,
@@ -169,7 +137,7 @@ fun ClassCard(
         else         -> MaterialTheme.colorScheme.surface
     }
 
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp),
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor)) {
         Column(modifier = Modifier.padding(16.dp)) {
 
