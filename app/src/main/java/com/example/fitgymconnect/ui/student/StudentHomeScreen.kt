@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +18,9 @@ import com.example.fitgymconnect.ui.shared.ProfileViewModel
 import com.example.fitgymconnect.ui.shared.RoutineUiState
 import com.example.fitgymconnect.ui.shared.RoutineViewModel
 import com.example.fitgymconnect.utils.difficultyLabel
-import com.example.fitgymconnect.utils.formatScheduledAt
+import com.example.fitgymconnect.utils.formatBookingDateTime
+import com.example.fitgymconnect.utils.formatTimeSlot
+import java.time.LocalDate
 
 @Composable
 fun StudentHomeScreen(
@@ -29,18 +32,21 @@ fun StudentHomeScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     routineViewModel: RoutineViewModel = hiltViewModel()
 ) {
-    val userName by profileViewModel.userName.collectAsState(initial = null)
-    val subState by subscriptionViewModel.state.collectAsState()
+    val userName     by profileViewModel.userName.collectAsState(initial = null)
+    val subState     by subscriptionViewModel.state.collectAsState()
     val bookingState by bookingViewModel.state.collectAsState()
     val routineState by routineViewModel.state.collectAsState()
     val hasActiveSub = subState is SubscriptionUiState.Active
 
-    val nextBooking: Booking? = when (bookingState) {
+    val today = LocalDate.now().toString()
+
+    // Próximas 2 reservas a partir de hoy
+    val upcomingBookings: List<Booking> = when (bookingState) {
         is BookingUiState.Success -> (bookingState as BookingUiState.Success).bookings
-            .filter { it.status != "cancelled" }
-            .sortedWith(compareBy(nullsLast(naturalOrder())) { it.gym_class?.scheduled_at })
-            .firstOrNull()
-        else -> null
+            .filter { it.status != "cancelled" && it.booking_date != null && it.booking_date >= today }
+            .sortedWith(compareBy({ it.booking_date }, { it.time_slot }))
+            .take(2)
+        else -> emptyList()
     }
 
     val previewRoutines: List<Routine> = when (routineState) {
@@ -63,62 +69,44 @@ fun StudentHomeScreen(
                 "¡Bienvenido${if (userName != null) ", ${userName!!.substringBefore(" ")}" else ""}!",
                 style = MaterialTheme.typography.headlineMedium
             )
-            Text(
-                "¿Listo para entrenar hoy?",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text("¿Listo para entrenar hoy?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Banner suscripción
         if (subState is SubscriptionUiState.NoSubscription) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Hazte Premium", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text(
-                            "Accede a todas las clases en vivo y rutinas premium por 9,99€/mes",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Button(
-                            onClick = onNavigateToPerfil,
-                            modifier = Modifier.align(Alignment.End)
-                        ) { Text("Ver planes") }
+                        Text("Accede a todas las clases en vivo y rutinas premium por 9,99€/mes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Button(onClick = onNavigateToPerfil, modifier = Modifier.align(Alignment.End)) { Text("Ver planes") }
                     }
                 }
             }
         }
 
-        // Próxima clase
+        // Próximas clases
         item {
-            HomeSectionHeader(title = "Próxima clase")
+            HomeSectionHeader(title = "Próximas clases")
             Spacer(Modifier.height(8.dp))
-            if (nextBooking == null) {
-                HomeEmptyCard(text = "No tienes reservas activas")
+            if (upcomingBookings.isEmpty()) {
+                HomeEmptyCard(text = "No tienes reservas próximas")
             } else {
-                NextBookingCard(booking = nextBooking)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    upcomingBookings.forEach { NextBookingCard(it) }
+                }
             }
         }
 
-        // Rutinas
+        // Rutinas para ti
         item {
             HomeSectionHeader(title = "Rutinas para ti")
             Spacer(Modifier.height(8.dp))
             if (previewRoutines.isEmpty()) {
-                HomeEmptyCard(
-                    text = "No hay rutinas disponibles",
-                    actionLabel = "Explorar rutinas",
-                    onAction = onNavigateToRutinas
-                )
+                HomeEmptyCard(text = "No hay rutinas disponibles")
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    previewRoutines.forEach { routine ->
-                        CompactRoutineCard(routine = routine)
-                    }
+                    previewRoutines.forEach { CompactRoutineCard(it) }
                 }
             }
         }
@@ -130,29 +118,15 @@ private fun HomeSectionHeader(title: String, actionLabel: String? = null, onActi
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
         if (actionLabel != null) {
-            TextButton(onClick = onAction) {
-                Text(actionLabel, style = MaterialTheme.typography.labelMedium)
-            }
+            TextButton(onClick = onAction) { Text(actionLabel, style = MaterialTheme.typography.labelMedium) }
         }
     }
 }
 
 @Composable
-private fun HomeEmptyCard(text: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            if (actionLabel != null) {
-                TextButton(onClick = onAction) { Text(actionLabel) }
-            }
-        }
+private fun HomeEmptyCard(text: String) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Text(text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -163,43 +137,18 @@ private fun NextBookingCard(booking: Booking) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    gymClass?.title ?: "Clase reservada",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(gymClass?.title ?: "Clase reservada", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            if (booking.booking_date != null && booking.time_slot != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text(
-                        gymClass?.scheduled_at?.let { formatScheduledAt(it) } ?: "Fecha por confirmar",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-                gymClass?.trainer?.user?.name?.let { name ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                        Text(name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
+                    Text(formatBookingDateTime(booking.booking_date, booking.time_slot), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
-            gymClass?.type?.let { type ->
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = if (type == "online") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer
-                ) {
-                    Text(
-                        if (type == "online") "Online" else "Presencial",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (type == "online") MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+            gymClass?.trainer?.user?.name?.let { name ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
         }
@@ -208,34 +157,25 @@ private fun NextBookingCard(booking: Booking) {
 
 @Composable
 private fun CompactRoutineCard(routine: Routine) {
-    val cardContainerColor = when (routine.difficulty) {
+    val cardColor = when (routine.difficulty) {
         "beginner"     -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
         "intermediate" -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
         "advanced"     -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         else           -> MaterialTheme.colorScheme.surface
     }
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp),
-        colors = CardDefaults.cardColors(containerColor = cardContainerColor)) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp), colors = CardDefaults.cardColors(containerColor = cardColor)) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(routine.title, style = MaterialTheme.typography.bodyMedium)
-                routine.trainer?.user?.name?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                routine.trainer?.user?.name?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 routine.difficulty?.let { diff ->
-                    val color = when (diff) {
-                        "beginner"     -> MaterialTheme.colorScheme.tertiaryContainer
+                    Surface(shape = MaterialTheme.shapes.small, color = when (diff) {
+                        "beginner" -> MaterialTheme.colorScheme.tertiaryContainer
                         "intermediate" -> MaterialTheme.colorScheme.secondaryContainer
-                        "advanced"     -> MaterialTheme.colorScheme.errorContainer
-                        else           -> MaterialTheme.colorScheme.surfaceVariant
-                    }
-                    Surface(shape = MaterialTheme.shapes.small, color = color) {
+                        else -> MaterialTheme.colorScheme.errorContainer
+                    }) {
                         Text(difficultyLabel(diff), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp), style = MaterialTheme.typography.labelSmall)
                     }
                 }

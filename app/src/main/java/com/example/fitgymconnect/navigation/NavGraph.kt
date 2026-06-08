@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.fitgymconnect.ui.auth.LoginScreen
 import com.example.fitgymconnect.ui.auth.RegisterScreen
 import com.example.fitgymconnect.ui.main.AuthState
+import com.example.fitgymconnect.ui.theme.FitGymConnectTheme
 import com.example.fitgymconnect.ui.main.MainViewModel
 import com.example.fitgymconnect.ui.student.StudentMainScreen
 import com.example.fitgymconnect.ui.trainer.TrainerMainScreen
@@ -53,23 +54,27 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Routes.LOGIN) {
-            LoginScreen(
-                onLoginSuccess = { role ->
-                    val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
-                    navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
-                },
-                onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
-            )
+            FitGymConnectTheme(darkTheme = false) {
+                LoginScreen(
+                    onLoginSuccess = { role ->
+                        val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
+                        navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
+                    },
+                    onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
+                )
+            }
         }
 
         composable(Routes.REGISTER) {
-            RegisterScreen(
-                onRegisterSuccess = { role ->
-                    val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
-                    navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
-                },
-                onNavigateToLogin = { navController.popBackStack() }
-            )
+            FitGymConnectTheme(darkTheme = false) {
+                RegisterScreen(
+                    onRegisterSuccess = { role ->
+                        val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
+                        navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
+                    },
+                    onNavigateToLogin = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Routes.STUDENT) {

@@ -1,7 +1,9 @@
 package com.example.fitgymconnect.ui.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +20,19 @@ fun RegisterScreen(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var name            by remember { mutableStateOf("") }
+    var email           by remember { mutableStateOf("") }
+    var password        by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var submitted       by remember { mutableStateOf(false) }
+
+    val nameError            = submitted && name.isBlank()
+    val emailError           = submitted && email.isBlank()
+    val emailFormatError     = submitted && email.isNotBlank() && !email.contains("@")
+    val passwordError        = submitted && password.isBlank()
+    val passwordShortError   = submitted && password.isNotBlank() && password.length < 8
+    val confirmBlankError    = submitted && confirmPassword.isBlank()
+    val confirmMismatchError = submitted && confirmPassword.isNotBlank() && confirmPassword != password
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
@@ -31,7 +43,10 @@ fun RegisterScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -40,32 +55,71 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = {
+                name = it
+                if (uiState is AuthUiState.Error) viewModel.resetState()
+            },
             label = { Text("Nombre completo") },
             singleLine = true,
+            isError = nameError,
+            supportingText = if (nameError) ({ Text("Campo obligatorio") }) else null,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                if (uiState is AuthUiState.Error) viewModel.resetState()
+            },
             label = { Text("Email") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
+            isError = emailError || emailFormatError,
+            supportingText = when {
+                emailError       -> ({ Text("Campo obligatorio") })
+                emailFormatError -> ({ Text("Introduce un email válido") })
+                else             -> null
+            },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                if (uiState is AuthUiState.Error) viewModel.resetState()
+            },
             label = { Text("Contraseña") },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
+            isError = passwordError || passwordShortError,
+            supportingText = when {
+                passwordError      -> ({ Text("Campo obligatorio") })
+                passwordShortError -> ({ Text("Mínimo 8 caracteres") })
+                else               -> null
+            },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(4.dp))
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirmar contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            isError = confirmBlankError || confirmMismatchError,
+            supportingText = when {
+                confirmBlankError    -> ({ Text("Campo obligatorio") })
+                confirmMismatchError -> ({ Text("Las contraseñas no coinciden") })
+                else                 -> null
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(16.dp))
 
         if (uiState is AuthUiState.Error) {
             Text(
@@ -77,7 +131,16 @@ fun RegisterScreen(
         }
 
         Button(
-            onClick = { viewModel.register(name, email, password) },
+            onClick = {
+                submitted = true
+                val valid = name.isNotBlank()
+                    && email.isNotBlank() && email.contains("@")
+                    && password.isNotBlank() && password.length >= 8
+                    && confirmPassword == password
+                if (valid) {
+                    viewModel.register(name.trim(), email.trim(), password)
+                }
+            },
             enabled = uiState !is AuthUiState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {

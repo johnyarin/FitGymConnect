@@ -18,6 +18,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.fitgymconnect.ui.shared.ClassesScreen
+import com.example.fitgymconnect.ui.shared.ExerciseDetailScreen
+import com.example.fitgymconnect.ui.shared.RoutineDetailScreen
+import com.example.fitgymconnect.ui.shared.RoutineViewModel
 import com.example.fitgymconnect.ui.shared.RoutinesScreen
 
 private data class NavItem(val route: String, val label: String, val icon: ImageVector)
@@ -27,6 +30,7 @@ fun StudentMainScreen(onLogout: () -> Unit) {
     val navController = rememberNavController()
     val bookingViewModel: BookingViewModel = hiltViewModel()
     val subscriptionViewModel: SubscriptionViewModel = hiltViewModel()
+    val routineViewModel: RoutineViewModel = hiltViewModel()
 
     val subState by subscriptionViewModel.state.collectAsState()
     val hasActiveSub = subState is SubscriptionUiState.Active
@@ -39,24 +43,28 @@ fun StudentMainScreen(onLogout: () -> Unit) {
         NavItem("perfil",   "Perfil",   Icons.Default.Person),
     )
 
+    val detailRoutes = setOf("rutina_detalle", "ejercicio_detalle")
+
     Scaffold(
         bottomBar = {
             val backStack by navController.currentBackStackEntryAsState()
             val current = backStack?.destination?.route
-            NavigationBar {
-                items.forEach { item ->
-                    NavigationBarItem(
-                        selected = current == item.route,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon  = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(item.label) }
-                    )
+            if (current !in detailRoutes) {
+                NavigationBar {
+                    items.forEach { item ->
+                        NavigationBarItem(
+                            selected = current == item.route,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon  = { Icon(item.icon, contentDescription = null) },
+                            label = { Text(item.label) }
+                        )
+                    }
                 }
             }
         }
@@ -64,14 +72,57 @@ fun StudentMainScreen(onLogout: () -> Unit) {
         NavHost(navController = navController, startDestination = "inicio", modifier = Modifier.padding(padding)) {
             composable("inicio") {
                 StudentHomeScreen(
-                    bookingViewModel = bookingViewModel,
+                    bookingViewModel      = bookingViewModel,
                     subscriptionViewModel = subscriptionViewModel,
-                    onNavigateToClases = { navController.navigate("clases") },
-                    onNavigateToRutinas = { navController.navigate("rutinas") },
-                    onNavigateToPerfil = { navController.navigate("perfil") }
+                    onNavigateToClases  = {
+                        navController.navigate("clases") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
+                        }
+                    },
+                    onNavigateToRutinas = {
+                        navController.navigate("rutinas") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
+                        }
+                    },
+                    onNavigateToPerfil  = {
+                        navController.navigate("perfil") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
+                        }
+                    }
                 )
             }
-            composable("rutinas")  { RoutinesScreen(hasActiveSubscription = hasActiveSub) }
+            composable("rutinas") {
+                RoutinesScreen(
+                    hasActiveSubscription = hasActiveSub,
+                    viewModel = routineViewModel,
+                    onRoutineClick = { routine ->
+                        routineViewModel.selectRoutine(routine)
+                        navController.navigate("rutina_detalle")
+                    }
+                )
+            }
+            composable("rutina_detalle") {
+                RoutineDetailScreen(
+                    routineViewModel = routineViewModel,
+                    onBack = { navController.popBackStack() },
+                    onExerciseClick = { exercise ->
+                        routineViewModel.selectExercise(exercise)
+                        navController.navigate("ejercicio_detalle")
+                    }
+                )
+            }
+            composable("ejercicio_detalle") {
+                ExerciseDetailScreen(
+                    routineViewModel = routineViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
             composable("clases") {
                 ClassesScreen(
                     showBookingButton = true,

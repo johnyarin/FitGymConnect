@@ -383,11 +383,155 @@ Aplicado de forma consistente en todas las pantallas:
 
 ## Mejoras futuras
 
-- Detalle de clase con lista de alumnos apuntados (requiere endpoint `GET /api/classes/{id}/bookings` en el backend)
+- **Lista de ejercicios por rutina con vídeos demostrativos:** cada rutina mostraría un desglose de ejercicios (nombre, series, repeticiones, descanso) con un vídeo demostrativo por ejercicio, similar a apps de entrenamiento como Nike Training Club o Freeletics. El modelo `Routine` ya dispone del campo `video_url` como punto de partida. Requeriría una tabla `exercises` en el backend (ejercicio, series, reps, orden, vídeo) relacionada con `routines`, y una pantalla de detalle de rutina en la app con reproductor de vídeo o enlace a YouTube.
 - Tabla `trainer_student` para asignación directa de rutinas de un entrenador a un alumno específico
 - Notificaciones push antes de una clase reservada
 - Sistema de valoraciones y reseñas desde la app
 - Modo oscuro
 - Soporte offline con caché local
-- Control de acceso al enlace de videollamada verificado en el backend
-- Suscripción que permanece activa hasta la fecha de vencimiento tras cancelar
+- Pull-to-refresh en pantallas de listas
+- Confirmación de contraseña en el registro
+- Validación de campos vacíos en login y registro
+- Implementación completa del modelo de suscripciones de dos niveles (ver sección correspondiente)
+- Flujo de pago por reserva individual de clase para suscriptores Sub B
+
+---
+
+## Modelo de Suscripciones
+
+### Diseño del sistema
+
+La aplicación FitGymConnect contempla un modelo de suscripciones de dos niveles, diseñado para dar cabida tanto a los socios presenciales del gimnasio como a usuarios que deseen acceder únicamente a los servicios digitales.
+
+### Tipos de suscripción
+
+**Suscripción A — Socio completo (30-40€/mes)**
+
+Orientada al usuario que acude físicamente al gimnasio. Esta suscripción se contrata de forma presencial en las instalaciones y es activada manualmente por el administrador desde el panel de gestión. Incluye:
+
+- Acceso total a las instalaciones y maquinaria del gimnasio
+- Acceso completo a la aplicación móvil
+- Visualización de todas las rutinas, incluyendo las marcadas como premium
+- Reserva de clases en vivo sin coste adicional por sesión
+
+**Suscripción B — Acceso digital (10€/mes)**
+
+Orientada al usuario que desea acceder a los servicios digitales sin necesidad de asistir presencialmente al gimnasio. Esta suscripción puede contratarse directamente desde la aplicación móvil mediante pasarela de pago Stripe. Incluye:
+
+- Acceso completo a la aplicación móvil
+- Visualización de todas las rutinas, incluyendo las marcadas como premium
+- Acceso a clases en vivo con un coste adicional por reserva
+
+### Estado actual de implementación
+
+En la versión actual de la aplicación se encuentra implementada la **Suscripción B**, con el flujo de pago completo integrado mediante Stripe (PaymentIntent → PaymentSheet → confirmación con el servidor). El usuario puede suscribirse, consultar el estado de su suscripción y cancelarla en cualquier momento desde su perfil.
+
+La **Suscripción A** se gestiona íntegramente desde el panel de administración web, sin requerir ninguna acción adicional por parte de la app — el backend simplemente marca al usuario como suscriptor activo y la aplicación refleja ese estado automáticamente.
+
+### Mejoras futuras planificadas para suscripciones
+
+**1. Distinción de tipo de suscripción en el backend**
+Añadir un campo `type` (`"gym"` / `"app"`) al modelo `Subscription` para que la aplicación pueda diferenciar qué tipo de suscripción tiene el usuario.
+
+**2. Flujo de pago por reserva de clase (Sub B)**
+Cuando un usuario con Suscripción B intente reservar una clase en vivo:
+1. La app detecta que el usuario tiene Sub B
+2. Se lanza un PaymentIntent específico para esa reserva
+3. El usuario completa el pago mediante PaymentSheet de Stripe
+4. Tras la confirmación del pago, el backend registra la reserva
+
+**3. Pantalla de selección de plan**
+Mostrar al usuario una comparativa visual entre Sub A y Sub B antes de suscribirse.
+
+---
+
+## Sesión de mejoras — Refactorización y nuevas funcionalidades
+
+### Refactorización del sistema de clases
+
+El modelo de datos de clases fue rediseñado completamente para pasar de un sistema de clases con fecha fija a un **sistema de horarios recurrentes**, más acorde con el funcionamiento real de un gimnasio.
+
+**Modelo anterior:** cada clase tenía una fecha y hora concreta (`scheduled_at`). Para tener Yoga los lunes y miércoles durante un mes era necesario crear 8 registros manualmente.
+
+**Modelo nuevo:** las clases son plantillas (`GymClass`) con un array de horarios recurrentes (`ClassSchedule`), donde cada schedule define el día de la semana (`day_of_week`, 0=Lunes a 6=Domingo) y la hora (`time_slot`). Las reservas almacenan la fecha concreta elegida por el alumno.
+
+### Nuevos endpoints de la API
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | /api/classes/{id}/availability?date=YYYY-MM-DD&time\_slot=HH:MM | Plazas disponibles para una sesión concreta |
+| GET | /api/classes/{id}/bookings | Lista de alumnos con reserva confirmada para esa clase |
+
+### Nuevo modelo de Booking
+
+```json
+{
+  "id": 1,
+  "user_id": 3,
+  "class_id": 1,
+  "booking_date": "2026-06-10",
+  "time_slot": "09:00:00",
+  "status": "confirmed",
+  "gym_class": { ... }
+}
+```
+
+### Nuevas pantallas y ViewModels
+
+| Archivo | Descripción |
+|---|---|
+| `ClassDetailViewModel` | Gestiona la selección de fecha, hora y consulta de disponibilidad en el bottom sheet |
+| `TrainerAgendaViewModel` | Genera la agenda de los próximos 14 días y carga alumnos por sesión |
+| `TrainerAgendaScreen` | Vista de agenda del entrenador con lista de alumnos por sesión |
+| `TrainerOccupancyViewModel` | Carga ocupación por schedule para el panel del entrenador |
+
+### Mejoras en el flujo de reserva (alumno)
+
+- **Bottom sheet de reserva:** al pulsar una clase se abre un menú inferior con selector de fecha (próximas 4 semanas, solo días disponibles) y selector de hora. Ambos visibles simultáneamente.
+- **Validación temporal:** fechas y horas ya pasadas aparecen deshabilitadas (en gris) automáticamente.
+- **Consulta de disponibilidad en tiempo real:** al seleccionar fecha y hora se consulta el endpoint de disponibilidad y se muestra el número de plazas restantes.
+- **Bloqueo de plazas completas:** el botón de reserva se deshabilita si la sesión está llena.
+
+### Mejoras en la pantalla de Inicio (alumno)
+
+- Sección "Próximas clases" muestra las **2 reservas más cercanas a partir de hoy** ordenadas cronológicamente, ignorando reservas pasadas.
+- Eliminados botones de navegación redundantes ("Ver clases", "Explorar clases") para una interfaz más limpia.
+
+### Mejoras en Mis Reservas (alumno)
+
+- Las tarjetas de reserva muestran la **fecha y hora concreta** de la sesión reservada.
+- Botón "Cancelar" compacto integrado en la misma línea que el título de la clase.
+- Eliminado el chip de estado "Confirmada" (redundante).
+
+### Nuevo Home del entrenador
+
+- Eliminada la sección "Mis clases con ocupación" (redundante con la pestaña Agenda).
+- Nueva sección **"Hoy"** que muestra las sesiones del día actual con hora, nombre y alumnos apuntados. Si no hay sesiones hoy, muestra las 2 próximas.
+- Navegación correcta desde los enlaces del home hacia las pestañas del bottom bar.
+
+### Vista de Agenda del entrenador
+
+- Lista de sesiones de los **próximos 14 días** ordenada por fecha y hora.
+- Cabeceras de fecha con etiquetas contextuales ("Hoy", "Mañana", "Jueves 12 Jun…").
+- Ocupación visible en cada sesión (alumnos apuntados / plazas máximas) con indicador rojo si está llena.
+- Al pulsar una sesión se abre un bottom sheet con la **lista de alumnos** apuntados (nombre e inicial).
+- El ViewModel se comparte entre el Home y la pestaña Agenda para evitar llamadas duplicadas a la API.
+
+### Nuevo Perfil del entrenador
+
+- **Avatar** con la inicial del nombre en lugar del icono genérico.
+- **Especialidad** como chip junto al badge de rol, en lugar de una card independiente.
+- Eliminada la sección "Sobre mí" (irrelevante para el entrenador en su propio perfil).
+- **Stats diarios en tiempo real:**
+  - Sesiones restantes hoy
+  - Alumnos para hoy (suma de alumnos en sesiones restantes)
+  - Rutinas publicadas
+
+### Corrección de errores
+
+- **Campos mal mapeados:** `date` → `scheduled_at`, `max_students` → `max_capacity`, `speciality` → `specialty` corregidos con `@SerializedName`.
+- **"Próxima clase" del alumno** ordenada cronológicamente en lugar de mostrar el primer elemento de la lista.
+- **Error de suscripción silenciado:** un error de red ya no se muestra como "sin suscripción activa".
+- **BookingViewModel compartido** entre pestañas para mantener el contador de reservas activas sincronizado.
+- **Navegación del home** corregida para usar las mismas opciones que el bottom bar (`popUpTo`, `launchSingleTop`, `restoreState`).
+- **Elevación de cards** reducida a 0dp para eliminar el efecto de borde grueso causado por el overlay tonal de Material You.

@@ -16,8 +16,8 @@ class BookingRepository @Inject constructor(private val api: ApiService) {
         else Result.Error("Error al cargar reservas")
     } catch (e: Exception) { Result.Error("Error de conexión") }
 
-    suspend fun bookClass(classId: Int): Result<Booking> = try {
-        val r = api.createBooking(BookingRequest(class_id = classId))
+    suspend fun bookClass(classId: Int, bookingDate: String, timeSlot: String): Result<Booking> = try {
+        val r = api.createBooking(BookingRequest(classId, bookingDate, timeSlot))
         if (r.isSuccessful) Result.Success(r.body()!!)
         else Result.Error(parseError(r.errorBody()?.string()))
     } catch (e: Exception) { Result.Error("Error de conexión") }

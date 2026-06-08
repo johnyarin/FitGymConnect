@@ -12,9 +12,8 @@ fun formatScheduledAt(dateStr: String): String {
     )
     val output = SimpleDateFormat("EEE d MMM, HH:mm", Locale("es", "ES"))
     for (fmt in formats) {
-        try {
-            return output.format(SimpleDateFormat(fmt, Locale.getDefault()).parse(dateStr)!!)
-        } catch (_: Exception) {}
+        try { return output.format(SimpleDateFormat(fmt, Locale.getDefault()).parse(dateStr)!!) }
+        catch (_: Exception) {}
     }
     return dateStr
 }
@@ -42,9 +41,34 @@ fun formatEndDate(dateStr: String): String {
     )
     val output = SimpleDateFormat("d MMM yyyy", Locale("es", "ES"))
     for (fmt in formats) {
-        try {
-            return output.format(SimpleDateFormat(fmt, Locale.getDefault()).parse(dateStr)!!)
-        } catch (_: Exception) {}
+        try { return output.format(SimpleDateFormat(fmt, Locale.getDefault()).parse(dateStr)!!) }
+        catch (_: Exception) {}
     }
     return dateStr
+}
+
+// 0=Lun .. 6=Dom
+fun dayOfWeekLabel(dow: Int) = when (dow) {
+    0 -> "Lun"; 1 -> "Mar"; 2 -> "Mié"
+    3 -> "Jue"; 4 -> "Vie"; 5 -> "Sáb"
+    6 -> "Dom"; else -> ""
+}
+
+fun dayOfWeekFull(dow: Int) = when (dow) {
+    0 -> "Lunes"; 1 -> "Martes"; 2 -> "Miércoles"
+    3 -> "Jueves"; 4 -> "Viernes"; 5 -> "Sábado"
+    6 -> "Domingo"; else -> ""
+}
+
+// "09:00:00" → "09:00"
+fun formatTimeSlot(timeSlot: String) = timeSlot.take(5)
+
+// "2026-06-10" + "09:00:00" → "Mar 10 Jun, 09:00"
+fun formatBookingDateTime(date: String, timeSlot: String): String {
+    val time = formatTimeSlot(timeSlot)
+    return try {
+        val input  = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val output = SimpleDateFormat("EEE d MMM", Locale("es", "ES"))
+        "${output.format(input.parse(date)!!)}, $time"
+    } catch (_: Exception) { "$date $time" }
 }

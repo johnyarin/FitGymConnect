@@ -25,6 +25,9 @@ class ClassViewModel @Inject constructor(
     private val _state = MutableStateFlow<ClassUiState>(ClassUiState.Loading)
     val state: StateFlow<ClassUiState> = _state
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     init { load() }
 
     fun load() = viewModelScope.launch {
@@ -33,5 +36,14 @@ class ClassViewModel @Inject constructor(
             is Result.Success -> ClassUiState.Success(r.data)
             is Result.Error   -> ClassUiState.Error(r.message)
         }
+    }
+
+    fun refresh() = viewModelScope.launch {
+        _isRefreshing.value = true
+        when (val r = repo.getClasses()) {
+            is Result.Success -> _state.value = ClassUiState.Success(r.data)
+            is Result.Error   -> Unit
+        }
+        _isRefreshing.value = false
     }
 }

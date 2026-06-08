@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,14 +20,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.fitgymconnect.data.model.Routine
 import com.example.fitgymconnect.utils.difficultyLabel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutinesScreen(
     filterByUserId: Int? = null,
     title: String = "Rutinas",
     hasActiveSubscription: Boolean = true,
+    onRoutineClick: ((Routine) -> Unit)? = null,
     viewModel: RoutineViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     var selectedDifficulty by remember { mutableStateOf<String?>(null) }
 
     when (state) {
@@ -49,6 +53,11 @@ fun RoutinesScreen(
             val filtered = if (selectedDifficulty == null) routines
                            else routines.filter { it.difficulty == selectedDifficulty }
 
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize()
+            ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -110,15 +119,18 @@ fun RoutinesScreen(
                         }
                     }
                 } else {
-                    items(filtered, key = { it.id }) { RoutineCard(it, hasActiveSubscription) }
+                    items(filtered, key = { it.id }) {
+                        RoutineCard(it, hasActiveSubscription, onClick = if (onRoutineClick != null && it.is_premium != true || hasActiveSubscription) ({ onRoutineClick?.invoke(it) }) else null)
+                    }
                 }
             }
+            } // PullToRefreshBox
         }
     }
 }
 
 @Composable
-fun RoutineCard(routine: Routine, hasActiveSubscription: Boolean = true) {
+fun RoutineCard(routine: Routine, hasActiveSubscription: Boolean = true, onClick: (() -> Unit)? = null) {
     val locked = routine.is_premium == true && !hasActiveSubscription
 
     val cardContainerColor = when {
@@ -134,7 +146,8 @@ fun RoutineCard(routine: Routine, hasActiveSubscription: Boolean = true) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(0.dp),
-        colors = CardDefaults.cardColors(containerColor = cardContainerColor)
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor),
+        onClick = onClick ?: {}
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

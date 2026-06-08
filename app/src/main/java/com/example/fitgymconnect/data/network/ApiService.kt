@@ -26,7 +26,17 @@ interface ApiService {
     @GET("api/classes")
     suspend fun getClasses(): Response<List<GymClass>>
 
-    // Bookings (authenticated via interceptor)
+    @GET("api/classes/{id}/bookings")
+    suspend fun getClassBookings(@Path("id") id: Int): Response<List<ClassBookingItem>>
+
+    @GET("api/classes/{id}/availability")
+    suspend fun getClassAvailability(
+        @Path("id") id: Int,
+        @Query("date") date: String,
+        @Query("time_slot") timeSlot: String
+    ): Response<ClassAvailability>
+
+    // Bookings
     @GET("api/bookings")
     suspend fun getBookings(): Response<List<Booking>>
 
@@ -36,7 +46,7 @@ interface ApiService {
     @DELETE("api/bookings/{id}")
     suspend fun cancelBooking(@Path("id") id: Int): Response<Unit>
 
-    // Subscription (authenticated via interceptor)
+    // Subscription
     @GET("api/subscription")
     suspend fun getSubscription(): Response<Subscription>
 

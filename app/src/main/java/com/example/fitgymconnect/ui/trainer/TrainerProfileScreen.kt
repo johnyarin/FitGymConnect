@@ -2,10 +2,11 @@ package com.example.fitgymconnect.ui.trainer
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,27 +14,55 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.fitgymconnect.ui.shared.ClassUiState
-import com.example.fitgymconnect.ui.shared.ClassViewModel
 import com.example.fitgymconnect.ui.shared.ProfileViewModel
-
+import com.example.fitgymconnect.ui.theme.LocalIsDarkTheme
+import com.example.fitgymconnect.ui.theme.LocalToggleDarkTheme
+import com.example.fitgymconnect.ui.shared.RoutineUiState
+import com.example.fitgymconnect.ui.shared.RoutineViewModel
+import com.example.fitgymconnect.utils.formatTimeSlot
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun TrainerProfileScreen(
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel(),
-    classViewModel: ClassViewModel = hiltViewModel()
+    agendaViewModel: TrainerAgendaViewModel,
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    routineViewModel: RoutineViewModel  = hiltViewModel()
 ) {
-    val userName  by viewModel.userName.collectAsState(initial = null)
-    val userEmail by viewModel.userEmail.collectAsState(initial = null)
-    val userId    by viewModel.userId.collectAsState(initial = null)
-    val classState by classViewModel.state.collectAsState()
+    val isDarkTheme = LocalIsDarkTheme.current
+    val toggleTheme = LocalToggleDarkTheme.current
 
-    val myTrainerProfile = when (classState) {
-        is ClassUiState.Success -> (classState as ClassUiState.Success).classes
-            .firstOrNull { it.trainer?.user_id == userId }?.trainer
-        else -> null
+    val userName   by profileViewModel.userName.collectAsState(initial = null)
+    val userEmail  by profileViewModel.userEmail.collectAsState(initial = null)
+    val userId     by profileViewModel.userId.collectAsState(initial = null)
+    val agendaState by agendaViewModel.state.collectAsState()
+    val routineState by routineViewModel.state.collectAsState()
+
+    val today = LocalDate.now()
+    val now   = LocalTime.now()
+
+    val agendaItems = when (agendaState) {
+        is TrainerAgendaViewModel.AgendaState.Success ->
+            (agendaState as TrainerAgendaViewModel.AgendaState.Success).items
+        else -> emptyList()
     }
+
+    val remainingToday = agendaItems.filter { item ->
+        item.date == today &&
+        LocalTime.parse(formatTimeSlot(item.schedule.timeSlot)) > now
+    }
+    val remainingSessionsCount = remainingToday.size
+    val studentsRemainingToday = remainingToday.sumOf { it.bookings.size }
+
+    val routineCount = when (routineState) {
+        is RoutineUiState.Success -> (routineState as RoutineUiState.Success).routines
+            .count { it.trainer?.user_id == userId }
+        else -> 0
+    }
+
+    // Specialty desde los datos de agenda
+    val specialty = agendaItems.firstOrNull()?.gymClass?.trainer?.specialty
 
     Column(
         modifier = Modifier
@@ -45,21 +74,38 @@ fun TrainerProfileScreen(
     ) {
         Spacer(Modifier.height(8.dp))
 
-        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(userName ?: "—", style = MaterialTheme.typography.headlineSmall)
-        Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
-            Text(
-                "Entrenador",
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+        // Avatar con inicial
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(80.dp)) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
+
+        // Nombre
+        Text(userName ?: "—", style = MaterialTheme.typography.headlineSmall)
+
+        // Badge rol + especialidad
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
+                Text("Entrenador", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            specialty?.let {
+                Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
+                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                }
+            }
+        }
+
+        // Email
         userEmail?.let { email ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -67,41 +113,43 @@ fun TrainerProfileScreen(
 
         HorizontalDivider()
 
-        // Especialidad
-        myTrainerProfile?.specialty?.let { specialty ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                    Column {
-                        Text("Especialidad", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(specialty, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+        // Stats semanales
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatColumn(value = "$remainingSessionsCount", label = "Sesiones\nrestantes hoy")
+                VerticalDivider(modifier = Modifier.height(40.dp))
+                StatColumn(value = "$studentsRemainingToday", label = "Alumnos\npara hoy")
+                VerticalDivider(modifier = Modifier.height(40.dp))
+                StatColumn(value = "$routineCount", label = "Rutinas\npublicadas")
             }
         }
 
-        // Bio
-        myTrainerProfile?.bio?.let { bio ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Sobre mí", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(bio, style = MaterialTheme.typography.bodyMedium)
-                }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Modo oscuro", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Switch(checked = isDarkTheme, onCheckedChange = { toggleTheme() })
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
         Button(
-            onClick = { viewModel.logout(onLogout) },
+            onClick = { profileViewModel.logout(onLogout) },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Cerrar sesión")
-        }
+        ) { Text("Cerrar sesión") }
+    }
+}
+
+@Composable
+private fun StatColumn(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(value, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }

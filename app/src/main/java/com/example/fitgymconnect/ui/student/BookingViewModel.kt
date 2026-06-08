@@ -31,6 +31,9 @@ class BookingViewModel @Inject constructor(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     init { loadBookings() }
 
     fun loadBookings() = viewModelScope.launch {
@@ -41,27 +44,32 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    fun bookClass(classId: Int) = viewModelScope.launch {
+    fun bookClass(classId: Int, bookingDate: String, timeSlot: String) = viewModelScope.launch {
         _processingIds.value += classId
-        when (val r = repo.bookClass(classId)) {
+        when (val r = repo.bookClass(classId, bookingDate, timeSlot)) {
             is Result.Success -> { _message.value = "¡Reserva realizada!"; loadBookings() }
             is Result.Error   -> _message.value = r.message
         }
         _processingIds.value -= classId
     }
 
-    fun cancelBooking(bookingId: Int, classId: Int) = viewModelScope.launch {
-        _processingIds.value += classId
+    fun cancelBooking(bookingId: Int) = viewModelScope.launch {
+        _processingIds.value += bookingId
         when (val r = repo.cancelBooking(bookingId)) {
             is Result.Success -> { _message.value = "Reserva cancelada"; loadBookings() }
             is Result.Error   -> _message.value = r.message
         }
-        _processingIds.value -= classId
+        _processingIds.value -= bookingId
+    }
+
+    fun refresh() = viewModelScope.launch {
+        _isRefreshing.value = true
+        when (val r = repo.getBookings()) {
+            is Result.Success -> _state.value = BookingUiState.Success(r.data)
+            is Result.Error   -> Unit
+        }
+        _isRefreshing.value = false
     }
 
     fun clearMessage() { _message.value = null }
-
-    fun getBookingForClass(classId: Int): Booking? =
-        (state.value as? BookingUiState.Success)?.bookings
-            ?.firstOrNull { it.class_id == classId && it.status != "cancelled" }
 }

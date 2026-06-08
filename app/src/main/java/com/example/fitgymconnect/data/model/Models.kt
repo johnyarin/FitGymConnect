@@ -22,6 +22,18 @@ data class User(
     val active: Boolean
 )
 
+data class Exercise(
+    val id: Int,
+    val name: String,
+    val description: String?,
+    val sets: Int?,
+    val duration_seconds: Int?,
+    val rest_seconds: Int?,
+    val order: Int,
+    val image_url: String?,
+    val video_url: String?
+)
+
 data class Routine(
     val id: Int,
     val title: String,
@@ -31,21 +43,26 @@ data class Routine(
     val video_url: String?,
     val is_premium: Boolean?,
     val trainer_id: Int?,
-    val trainer: TrainerProfile?
+    val trainer: TrainerProfile?,
+    val exercises: List<Exercise>? = null
+)
+
+data class ClassSchedule(
+    val id: Int,
+    @SerializedName("day_of_week")  val dayOfWeek: Int,    // 0=Lun .. 6=Dom
+    @SerializedName("time_slot")    val timeSlot: String,   // "09:00:00"
+    @SerializedName("max_students") val maxStudents: Int
 )
 
 data class GymClass(
     val id: Int,
     val title: String,
     val description: String?,
-    val type: String?,
-    @SerializedName("date") val scheduled_at: String?,
-    @SerializedName("max_students") val max_capacity: Int?,
-    val price: Double?,
+    val type: String?,        // "online" | "presential"
     val meet_link: String?,
     val trainer_id: Int?,
     val trainer: TrainerProfile?,
-    val bookings_count: Int?
+    val schedules: List<ClassSchedule>? = null
 )
 
 data class TrainerProfile(
@@ -57,12 +74,25 @@ data class TrainerProfile(
     val user: User?
 )
 
-data class BookingRequest(val class_id: Int)
+data class ClassAvailability(
+    @SerializedName("available_spots") val availableSpots: Int,
+    @SerializedName("max_students")    val maxStudents: Int,
+    val booked: Int,
+    @SerializedName("is_full") val isFull: Boolean
+)
+
+data class BookingRequest(
+    val class_id: Int,
+    val booking_date: String,
+    val time_slot: String
+)
 
 data class Booking(
     val id: Int,
     val user_id: Int,
     val class_id: Int,
+    val booking_date: String?,
+    val time_slot: String?,
     val status: String,
     val gym_class: GymClass?
 )
@@ -74,6 +104,14 @@ data class Subscription(
     val starts_at: String?,
     val ends_at: String?,
     val status: String?
+)
+
+data class ClassBookingItem(
+    val id: Int,
+    @SerializedName("booking_date") val bookingDate: String?,
+    @SerializedName("time_slot")    val timeSlot: String?,
+    val status: String,
+    val user: User?
 )
 
 data class PaymentIntentResponse(val client_secret: String)

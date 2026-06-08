@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -16,6 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.fitgymconnect.ui.shared.ProfileViewModel
+import com.example.fitgymconnect.ui.theme.LocalIsDarkTheme
+import com.example.fitgymconnect.ui.theme.LocalToggleDarkTheme
 import com.example.fitgymconnect.utils.formatEndDate
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
@@ -28,6 +31,9 @@ fun StudentProfileScreen(
     subscriptionViewModel: SubscriptionViewModel = hiltViewModel(),
     bookingViewModel: BookingViewModel = hiltViewModel()
 ) {
+    val isDarkTheme   = LocalIsDarkTheme.current
+    val toggleTheme   = LocalToggleDarkTheme.current
+
     val userName  by profileViewModel.userName.collectAsState(initial = null)
     val userEmail by profileViewModel.userEmail.collectAsState(initial = null)
     val subState  by subscriptionViewModel.state.collectAsState()
@@ -188,6 +194,18 @@ fun StudentProfileScreen(
 
                     is SubscriptionUiState.Error -> Text((subState as SubscriptionUiState.Error).message, color = MaterialTheme.colorScheme.error)
                 }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Modo oscuro", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Switch(checked = isDarkTheme, onCheckedChange = { toggleTheme() })
             }
         }
 

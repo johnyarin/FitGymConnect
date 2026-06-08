@@ -20,6 +20,10 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf(false) }
+
+    val emailError    = submitted && email.isBlank()
+    val passwordError = submitted && password.isBlank()
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
@@ -41,23 +45,33 @@ fun LoginScreen(
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                if (uiState is AuthUiState.Error) viewModel.resetState()
+            },
             label = { Text("Email") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
+            isError = emailError,
+            supportingText = if (emailError) ({ Text("Campo obligatorio") }) else null,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                if (uiState is AuthUiState.Error) viewModel.resetState()
+            },
             label = { Text("Contraseña") },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
+            isError = passwordError,
+            supportingText = if (passwordError) ({ Text("Campo obligatorio") }) else null,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
         if (uiState is AuthUiState.Error) {
             Text(
@@ -69,7 +83,12 @@ fun LoginScreen(
         }
 
         Button(
-            onClick = { viewModel.login(email, password) },
+            onClick = {
+                submitted = true
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    viewModel.login(email.trim(), password)
+                }
+            },
             enabled = uiState !is AuthUiState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
