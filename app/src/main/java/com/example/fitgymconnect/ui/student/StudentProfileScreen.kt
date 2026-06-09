@@ -43,8 +43,11 @@ fun StudentProfileScreen(
     val bookingState by bookingViewModel.state.collectAsState()
     val context = LocalContext.current
 
+    val today = java.time.LocalDate.now().toString()
     val activeBookingsCount = when (bookingState) {
-        is BookingUiState.Success -> (bookingState as BookingUiState.Success).bookings.count { it.status != "cancelled" }
+        is BookingUiState.Success -> (bookingState as BookingUiState.Success).bookings.count {
+            it.status != "cancelled" && it.booking_date != null && it.booking_date >= today
+        }
         else -> 0
     }
 
@@ -156,11 +159,11 @@ fun StudentProfileScreen(
                         }
                         Text("Válida hasta: $endDate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
-                        OutlinedButton(
+                        Button(
                             onClick = { showCancelDialog = true },
                             enabled = !isLoading,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
                             Text("Cancelar suscripción")
                         }

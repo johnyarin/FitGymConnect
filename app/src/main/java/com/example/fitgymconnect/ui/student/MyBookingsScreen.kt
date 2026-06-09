@@ -20,6 +20,7 @@ import com.example.fitgymconnect.data.model.Booking
 import com.example.fitgymconnect.utils.formatBookingDateTime
 import com.example.fitgymconnect.utils.formatTimeSlot
 import com.example.fitgymconnect.utils.statusLabel
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +49,12 @@ fun MyBookingsScreen(viewModel: BookingViewModel = hiltViewModel()) {
             }
         }
         is BookingUiState.Success -> {
-            val bookings = (state as BookingUiState.Success).bookings.filter { it.status != "cancelled" }
+            val today = LocalDate.now().toString()
+            val bookings = (state as BookingUiState.Success).bookings.filter { booking ->
+                booking.status != "cancelled" &&
+                booking.booking_date != null &&
+                booking.booking_date >= today
+            }
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = { viewModel.refresh() },
