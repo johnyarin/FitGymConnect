@@ -125,7 +125,7 @@ MVVM (Model - View - ViewModel)
 │   ├── student/        StudentMainScreen (5 tabs), StudentHomeScreen,
 │   │                   MyBookingsScreen, StudentProfileScreen,
 │   │                   BookingViewModel, SubscriptionViewModel
-│   ├── trainer/        TrainerMainScreen (5 tabs), TrainerHomeScreen,
+│   ├── trainer/        TrainerMainScreen (4 tabs), TrainerHomeScreen,
 │   │                   TrainerAgendaScreen, TrainerProfileScreen,
 │   │                   TrainerAgendaViewModel, TrainerOccupancyViewModel
 │   └── theme/          Theme, Color, Type, ThemeViewModel, ThemeLocals
@@ -143,7 +143,7 @@ App arranca → Splash (lee token + rol del DataStore)
     ├── role = "student" → StudentMainScreen
     │       └── 5 pestañas: Inicio · Rutinas · Clases · Reservas · Perfil
     └── role = "trainer" → TrainerMainScreen
-            └── 5 pestañas: Inicio · Mis Rutinas · Mis Clases · Agenda · Perfil
+            └── 4 pestañas: Inicio · Mis Rutinas · Mis Clases · Perfil
 ```
 
 ---
@@ -388,7 +388,7 @@ El modelo de datos de clases fue rediseñado completamente para pasar de un sist
 - Ocupación visible en cada sesión (alumnos apuntados / plazas máximas) con indicador rojo si está llena.
 - Al pulsar una sesión se abre un bottom sheet con la **lista de alumnos** apuntados (nombre e inicial).
 - El ViewModel se comparte entre el Home y la pestaña Agenda para evitar llamadas duplicadas a la API.
-- Bottom bar del entrenador ampliado a 5 pestañas: Inicio · Mis Rutinas · Mis Clases · Agenda · Perfil
+- La pestaña "Mis Clases" del entrenador ahora muestra directamente `TrainerAgendaScreen` (agenda de 14 días con alumnos por sesión)
 
 #### Nuevo Perfil del entrenador
 
