@@ -208,7 +208,16 @@ fun StudentProfileScreen(
             ) {
                 Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Modo oscuro", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                Switch(checked = isDarkTheme, onCheckedChange = { toggleTheme() })
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = { toggleTheme() },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor   = MaterialTheme.colorScheme.primary,
+                        checkedThumbColor   = MaterialTheme.colorScheme.onPrimary,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                )
             }
         }
 
