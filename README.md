@@ -6,7 +6,7 @@ Aplicación móvil Android para gestión de gimnasio y entrenadores online, desa
 
 ## Descripción
 
-FitGymConnect es una plataforma que conecta alumnos y entrenadores de gimnasio. Los alumnos pueden explorar rutinas de entrenamiento, reservar clases en vivo y gestionar su suscripción mensual. Los entrenadores disponen de un panel propio para visualizar sus clases y rutinas programadas.
+FitGymConnect es una plataforma que conecta alumnos y entrenadores de gimnasio. Los alumnos pueden explorar rutinas de entrenamiento con su desglose de ejercicios, reservar clases en vivo con selector de fecha y hora, y gestionar su suscripción mensual. Los entrenadores disponen de un panel propio para visualizar sus clases y rutinas, consultar la agenda de los próximos 14 días y ver los alumnos apuntados a cada sesión.
 
 ---
 
@@ -77,14 +77,15 @@ FitGymConnect es una plataforma que conecta alumnos y entrenadores de gimnasio. 
 | GET | /api/trainers | Listado de entrenadores |
 | GET | /api/routines | Listado de rutinas |
 | GET | /api/classes | Listado de clases |
-| GET | /api/classes/{id}/reviews | Valoraciones de una clase |
 
 ### Protegidos (requieren token Bearer)
 | Método | Endpoint | Descripción |
 |---|---|---|
 | GET | /api/bookings | Mis reservas |
-| POST | /api/bookings | Crear reserva |
+| POST | /api/bookings | Crear reserva (con `booking_date` y `time_slot`) |
 | DELETE | /api/bookings/{id} | Cancelar reserva |
+| GET | /api/classes/{id}/availability?date=YYYY-MM-DD&time_slot=HH:MM | Plazas disponibles para una sesión concreta |
+| GET | /api/classes/{id}/bookings | Lista de alumnos con reserva para esa clase |
 | GET | /api/subscription | Mi suscripción |
 | POST | /api/subscription/payment-intent | Iniciar pago Stripe |
 | POST | /api/subscription | Confirmar suscripción |
@@ -106,7 +107,7 @@ MVVM (Model - View - ViewModel)
 │
 ├── data/
 │   ├── local/          TokenDataStore — sesión persistente
-│   ├── model/          Data classes (User, Routine, GymClass, Booking…)
+│   ├── model/          Data classes (User, Routine, GymClass, Booking, ClassSchedule…)
 │   ├── network/        ApiService (Retrofit) + AuthInterceptor
 │   └── repository/     AuthRepository, RoutineRepository, ClassRepository,
 │                       BookingRepository, SubscriptionRepository
@@ -118,15 +119,18 @@ MVVM (Model - View - ViewModel)
 ├── ui/
 │   ├── auth/           LoginScreen, RegisterScreen, AuthViewModel
 │   ├── main/           MainViewModel — detecta sesión al arrancar
-│   ├── shared/         RoutinesScreen, ClassesScreen, ProfileViewModel,
-│   │                   RoutineViewModel, ClassViewModel
+│   ├── shared/         RoutinesScreen, RoutineDetailScreen, ExerciseDetailScreen,
+│   │                   ClassesScreen, ClassDetailViewModel,
+│   │                   ProfileViewModel, RoutineViewModel, ClassViewModel
 │   ├── student/        StudentMainScreen (5 tabs), StudentHomeScreen,
 │   │                   MyBookingsScreen, StudentProfileScreen,
 │   │                   BookingViewModel, SubscriptionViewModel
-│   └── trainer/        TrainerMainScreen (4 tabs), TrainerHomeScreen,
-│                       TrainerProfileScreen
+│   ├── trainer/        TrainerMainScreen (5 tabs), TrainerHomeScreen,
+│   │                   TrainerAgendaScreen, TrainerProfileScreen,
+│   │                   TrainerAgendaViewModel, TrainerOccupancyViewModel
+│   └── theme/          Theme, Color, Type, ThemeViewModel, ThemeLocals
 │
-└── utils/              Formatters (fechas, dificultad, estado)
+└── utils/              Constants (Stripe key, base URL), Formatters (fechas, dificultad)
 ```
 
 ---
@@ -139,7 +143,7 @@ App arranca → Splash (lee token + rol del DataStore)
     ├── role = "student" → StudentMainScreen
     │       └── 5 pestañas: Inicio · Rutinas · Clases · Reservas · Perfil
     └── role = "trainer" → TrainerMainScreen
-            └── 4 pestañas: Inicio · Mis Rutinas · Mis Clases · Perfil
+            └── 5 pestañas: Inicio · Mis Rutinas · Mis Clases · Agenda · Perfil
 ```
 
 ---
@@ -250,78 +254,6 @@ App arranca → Splash (lee token + rol del DataStore)
 
 ---
 
-## Estructura del proyecto Android
-
-```
-app/src/main/java/com/example/fitgymconnect/
-├── data/
-│   ├── local/TokenDataStore.kt
-│   ├── model/Models.kt
-│   ├── network/
-│   │   ├── ApiService.kt
-│   │   ├── AuthInterceptor.kt
-│   │   └── RetrofitClient.kt
-│   └── repository/
-│       ├── AuthRepository.kt
-│       ├── BookingRepository.kt
-│       ├── ClassRepository.kt
-│       ├── RoutineRepository.kt
-│       └── SubscriptionRepository.kt
-├── di/AppModule.kt
-├── navigation/NavGraph.kt
-├── ui/
-│   ├── auth/
-│   │   ├── AuthViewModel.kt
-│   │   ├── LoginScreen.kt
-│   │   └── RegisterScreen.kt
-│   ├── main/MainViewModel.kt
-│   ├── shared/
-│   │   ├── ClassesScreen.kt
-│   │   ├── ClassViewModel.kt
-│   │   ├── ProfileViewModel.kt
-│   │   ├── RoutinesScreen.kt
-│   │   └── RoutineViewModel.kt
-│   ├── student/
-│   │   ├── BookingViewModel.kt
-│   │   ├── MyBookingsScreen.kt
-│   │   ├── StudentHomeScreen.kt
-│   │   ├── StudentMainScreen.kt
-│   │   ├── StudentProfileScreen.kt
-│   │   ├── SubscriptionViewModel.kt
-│   ├── trainer/
-│   │   ├── TrainerHomeScreen.kt
-│   │   ├── TrainerMainScreen.kt
-│   │   └── TrainerProfileScreen.kt
-│   └── home/HomeScreen.kt
-├── utils/
-│   ├── Constants.kt
-│   └── Formatters.kt
-├── FitGymApp.kt
-└── MainActivity.kt
-```
-
----
-
-## Configuración para ejecutar
-
-### Requisitos
-- Android Studio Hedgehog o superior
-- JDK 11
-- Android API 28+ (Android 9.0)
-
-### Pasos
-1. Clonar el repositorio
-2. Abrir el proyecto en Android Studio
-3. En `utils/Constants.kt`, reemplazar `STRIPE_PUBLISHABLE_KEY` con tu clave pública de Stripe (modo test)
-4. Hacer **Sync Project with Gradle Files**
-5. Ejecutar en emulador o dispositivo físico (API 28+)
-
-### Clave Stripe
-La clave pública de Stripe se obtiene en: **Stripe Dashboard → Developers → API keys → Publishable key**  
-Formato: `pk_test_...`
-
----
-
 ### Día 9 — App Android: pulido visual, dashboards y perfiles
 
 #### Control de acceso a contenido premium
@@ -381,19 +313,198 @@ Aplicado de forma consistente en todas las pantallas:
 
 ---
 
+### Día 11 — Refactorización y nuevas funcionalidades
+
+#### Refactorización del sistema de clases
+
+El modelo de datos de clases fue rediseñado completamente para pasar de un sistema de clases con fecha fija a un **sistema de horarios recurrentes**, más acorde con el funcionamiento real de un gimnasio.
+
+**Modelo anterior:** cada clase tenía una fecha y hora concreta (`scheduled_at`). Para tener Yoga los lunes y miércoles durante un mes era necesario crear 8 registros manualmente.
+
+**Modelo nuevo:** las clases son plantillas (`GymClass`) con un array de horarios recurrentes (`ClassSchedule`), donde cada schedule define el día de la semana (`day_of_week`, 0=Lunes a 6=Domingo) y la hora (`time_slot`). Las reservas almacenan la fecha concreta elegida por el alumno.
+
+#### Nuevos endpoints de la API
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | /api/classes/{id}/availability?date=YYYY-MM-DD&time\_slot=HH:MM | Plazas disponibles para una sesión concreta |
+| GET | /api/classes/{id}/bookings | Lista de alumnos con reserva confirmada para esa clase |
+
+#### Nuevo modelo de Booking
+
+```json
+{
+  "id": 1,
+  "user_id": 3,
+  "class_id": 1,
+  "booking_date": "2026-06-10",
+  "time_slot": "09:00:00",
+  "status": "confirmed",
+  "gym_class": { ... }
+}
+```
+
+#### Nuevas pantallas y ViewModels
+
+| Archivo | Descripción |
+|---|---|
+| `ClassDetailViewModel` | Gestiona la selección de fecha, hora y consulta de disponibilidad en el bottom sheet |
+| `TrainerAgendaViewModel` | Genera la agenda de los próximos 14 días y carga alumnos por sesión |
+| `TrainerAgendaScreen` | Vista de agenda del entrenador con lista de alumnos por sesión |
+| `TrainerOccupancyViewModel` | Carga ocupación por schedule para el panel del entrenador |
+| `RoutineDetailScreen` | Detalle de rutina con lista de ejercicios (nombre, series, reps, descanso, enlace a vídeo) |
+| `ExerciseDetailScreen` | Detalle individual de un ejercicio |
+
+#### Mejoras en el flujo de reserva (alumno)
+
+- **Bottom sheet de reserva:** al pulsar una clase se abre un menú inferior con selector de fecha (próximas 4 semanas, solo días disponibles) y selector de hora. Ambos visibles simultáneamente.
+- **Validación temporal:** fechas y horas ya pasadas aparecen deshabilitadas (en gris) automáticamente.
+- **Consulta de disponibilidad en tiempo real:** al seleccionar fecha y hora se consulta el endpoint de disponibilidad y se muestra el número de plazas restantes.
+- **Bloqueo de plazas completas:** el botón de reserva se deshabilita si la sesión está llena.
+- **Validación de formularios:** campos vacíos en login y registro se validan antes de llamar a la API.
+- **Pull-to-refresh** implementado en las listas de rutinas, clases y reservas.
+
+#### Mejoras en la pantalla de Inicio (alumno)
+
+- Sección "Próximas clases" muestra las **2 reservas más cercanas a partir de hoy** ordenadas cronológicamente, ignorando reservas pasadas.
+- Eliminados botones de navegación redundantes ("Ver clases", "Explorar clases") para una interfaz más limpia.
+
+#### Mejoras en Mis Reservas (alumno)
+
+- Las tarjetas de reserva muestran la **fecha y hora concreta** de la sesión reservada.
+- Botón "Cancelar" compacto integrado en la misma línea que el título de la clase.
+- Eliminado el chip de estado "Confirmada" (redundante).
+
+#### Nuevo Home del entrenador
+
+- Eliminada la sección "Mis clases con ocupación" (redundante con la pestaña Agenda).
+- Nueva sección **"Hoy"** que muestra las sesiones del día actual con hora, nombre y alumnos apuntados. Si no hay sesiones hoy, muestra las 2 próximas.
+- Navegación correcta desde los enlaces del home hacia las pestañas del bottom bar.
+
+#### Vista de Agenda del entrenador
+
+- Lista de sesiones de los **próximos 14 días** ordenada por fecha y hora.
+- Cabeceras de fecha con etiquetas contextuales ("Hoy", "Mañana", "Jueves 12 Jun…").
+- Ocupación visible en cada sesión (alumnos apuntados / plazas máximas) con indicador rojo si está llena.
+- Al pulsar una sesión se abre un bottom sheet con la **lista de alumnos** apuntados (nombre e inicial).
+- El ViewModel se comparte entre el Home y la pestaña Agenda para evitar llamadas duplicadas a la API.
+- Bottom bar del entrenador ampliado a 5 pestañas: Inicio · Mis Rutinas · Mis Clases · Agenda · Perfil
+
+#### Nuevo Perfil del entrenador
+
+- **Avatar** con la inicial del nombre en lugar del icono genérico.
+- **Especialidad** como chip junto al badge de rol, en lugar de una card independiente.
+- Eliminada la sección "Sobre mí" (irrelevante para el entrenador en su propio perfil).
+- **Stats diarios en tiempo real:**
+  - Sesiones restantes hoy
+  - Alumnos para hoy (suma de alumnos en sesiones restantes)
+  - Rutinas publicadas
+
+#### Corrección de errores
+
+- **Campos mal mapeados:** `date` → `scheduled_at`, `max_students` → `max_capacity`, `speciality` → `specialty` corregidos con `@SerializedName`.
+- **"Próxima clase" del alumno** ordenada cronológicamente en lugar de mostrar el primer elemento de la lista.
+- **Error de suscripción silenciado:** un error de red ya no se muestra como "sin suscripción activa".
+- **BookingViewModel compartido** entre pestañas para mantener el contador de reservas activas sincronizado.
+- **Navegación del home** corregida para usar las mismas opciones que el bottom bar (`popUpTo`, `launchSingleTop`, `restoreState`).
+- **Elevación de cards** reducida a 0dp para eliminar el efecto de borde grueso causado por el overlay tonal de Material You.
+
+---
+
+## Estructura del proyecto Android
+
+```
+app/src/main/java/com/example/fitgymconnect/
+├── data/
+│   ├── local/TokenDataStore.kt
+│   ├── model/Models.kt
+│   ├── network/
+│   │   ├── ApiService.kt
+│   │   ├── AuthInterceptor.kt
+│   │   └── RetrofitClient.kt
+│   └── repository/
+│       ├── AuthRepository.kt
+│       ├── BookingRepository.kt
+│       ├── ClassRepository.kt
+│       ├── RoutineRepository.kt
+│       └── SubscriptionRepository.kt
+├── di/AppModule.kt
+├── navigation/NavGraph.kt
+├── ui/
+│   ├── auth/
+│   │   ├── AuthViewModel.kt
+│   │   ├── LoginScreen.kt
+│   │   └── RegisterScreen.kt
+│   ├── main/MainViewModel.kt
+│   ├── shared/
+│   │   ├── ClassesScreen.kt
+│   │   ├── ClassDetailViewModel.kt
+│   │   ├── ClassViewModel.kt
+│   │   ├── ExerciseDetailScreen.kt
+│   │   ├── ProfileViewModel.kt
+│   │   ├── RoutineDetailScreen.kt
+│   │   ├── RoutinesScreen.kt
+│   │   └── RoutineViewModel.kt
+│   ├── student/
+│   │   ├── BookingViewModel.kt
+│   │   ├── MyBookingsScreen.kt
+│   │   ├── StudentHomeScreen.kt
+│   │   ├── StudentMainScreen.kt
+│   │   ├── StudentProfileScreen.kt
+│   │   └── SubscriptionViewModel.kt
+│   ├── trainer/
+│   │   ├── TrainerAgendaScreen.kt
+│   │   ├── TrainerAgendaViewModel.kt
+│   │   ├── TrainerHomeScreen.kt
+│   │   ├── TrainerMainScreen.kt
+│   │   ├── TrainerOccupancyViewModel.kt
+│   │   └── TrainerProfileScreen.kt
+│   └── theme/
+│       ├── Color.kt
+│       ├── Theme.kt
+│       ├── ThemeLocals.kt
+│       ├── ThemeViewModel.kt
+│       └── Type.kt
+├── utils/
+│   ├── Constants.kt
+│   └── Formatters.kt
+├── FitGymApp.kt
+└── MainActivity.kt
+```
+
+---
+
+## Configuración para ejecutar
+
+### Requisitos
+- Android Studio Hedgehog o superior
+- JDK 11
+- Android API 28+ (Android 9.0)
+
+### Pasos
+1. Clonar el repositorio
+2. Abrir el proyecto en Android Studio
+3. En `utils/Constants.kt`, reemplazar `STRIPE_PUBLISHABLE_KEY` con tu clave pública de Stripe (modo test)
+4. Hacer **Sync Project with Gradle Files**
+5. Ejecutar en emulador o dispositivo físico (API 28+)
+
+### Clave Stripe
+La clave pública de Stripe se obtiene en: **Stripe Dashboard → Developers → API keys → Publishable key**  
+Formato: `pk_test_...`
+
+---
+
 ## Mejoras futuras
 
-- **Lista de ejercicios por rutina con vídeos demostrativos:** cada rutina mostraría un desglose de ejercicios (nombre, series, repeticiones, descanso) con un vídeo demostrativo por ejercicio, similar a apps de entrenamiento como Nike Training Club o Freeletics. El modelo `Routine` ya dispone del campo `video_url` como punto de partida. Requeriría una tabla `exercises` en el backend (ejercicio, series, reps, orden, vídeo) relacionada con `routines`, y una pantalla de detalle de rutina en la app con reproductor de vídeo o enlace a YouTube.
 - Tabla `trainer_student` para asignación directa de rutinas de un entrenador a un alumno específico
 - Notificaciones push antes de una clase reservada
 - Sistema de valoraciones y reseñas desde la app
-- Modo oscuro
+- Modo oscuro (infraestructura `ThemeViewModel` preparada; falta exponer el toggle en la UI)
 - Soporte offline con caché local
-- Pull-to-refresh en pantallas de listas
 - Confirmación de contraseña en el registro
-- Validación de campos vacíos en login y registro
 - Implementación completa del modelo de suscripciones de dos niveles (ver sección correspondiente)
 - Flujo de pago por reserva individual de clase para suscriptores Sub B
+- Pantalla de selección de plan con comparativa visual entre Sub A y Sub B
 
 ---
 
@@ -442,96 +553,3 @@ Cuando un usuario con Suscripción B intente reservar una clase en vivo:
 
 **3. Pantalla de selección de plan**
 Mostrar al usuario una comparativa visual entre Sub A y Sub B antes de suscribirse.
-
----
-
-## Sesión de mejoras — Refactorización y nuevas funcionalidades
-
-### Refactorización del sistema de clases
-
-El modelo de datos de clases fue rediseñado completamente para pasar de un sistema de clases con fecha fija a un **sistema de horarios recurrentes**, más acorde con el funcionamiento real de un gimnasio.
-
-**Modelo anterior:** cada clase tenía una fecha y hora concreta (`scheduled_at`). Para tener Yoga los lunes y miércoles durante un mes era necesario crear 8 registros manualmente.
-
-**Modelo nuevo:** las clases son plantillas (`GymClass`) con un array de horarios recurrentes (`ClassSchedule`), donde cada schedule define el día de la semana (`day_of_week`, 0=Lunes a 6=Domingo) y la hora (`time_slot`). Las reservas almacenan la fecha concreta elegida por el alumno.
-
-### Nuevos endpoints de la API
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | /api/classes/{id}/availability?date=YYYY-MM-DD&time\_slot=HH:MM | Plazas disponibles para una sesión concreta |
-| GET | /api/classes/{id}/bookings | Lista de alumnos con reserva confirmada para esa clase |
-
-### Nuevo modelo de Booking
-
-```json
-{
-  "id": 1,
-  "user_id": 3,
-  "class_id": 1,
-  "booking_date": "2026-06-10",
-  "time_slot": "09:00:00",
-  "status": "confirmed",
-  "gym_class": { ... }
-}
-```
-
-### Nuevas pantallas y ViewModels
-
-| Archivo | Descripción |
-|---|---|
-| `ClassDetailViewModel` | Gestiona la selección de fecha, hora y consulta de disponibilidad en el bottom sheet |
-| `TrainerAgendaViewModel` | Genera la agenda de los próximos 14 días y carga alumnos por sesión |
-| `TrainerAgendaScreen` | Vista de agenda del entrenador con lista de alumnos por sesión |
-| `TrainerOccupancyViewModel` | Carga ocupación por schedule para el panel del entrenador |
-
-### Mejoras en el flujo de reserva (alumno)
-
-- **Bottom sheet de reserva:** al pulsar una clase se abre un menú inferior con selector de fecha (próximas 4 semanas, solo días disponibles) y selector de hora. Ambos visibles simultáneamente.
-- **Validación temporal:** fechas y horas ya pasadas aparecen deshabilitadas (en gris) automáticamente.
-- **Consulta de disponibilidad en tiempo real:** al seleccionar fecha y hora se consulta el endpoint de disponibilidad y se muestra el número de plazas restantes.
-- **Bloqueo de plazas completas:** el botón de reserva se deshabilita si la sesión está llena.
-
-### Mejoras en la pantalla de Inicio (alumno)
-
-- Sección "Próximas clases" muestra las **2 reservas más cercanas a partir de hoy** ordenadas cronológicamente, ignorando reservas pasadas.
-- Eliminados botones de navegación redundantes ("Ver clases", "Explorar clases") para una interfaz más limpia.
-
-### Mejoras en Mis Reservas (alumno)
-
-- Las tarjetas de reserva muestran la **fecha y hora concreta** de la sesión reservada.
-- Botón "Cancelar" compacto integrado en la misma línea que el título de la clase.
-- Eliminado el chip de estado "Confirmada" (redundante).
-
-### Nuevo Home del entrenador
-
-- Eliminada la sección "Mis clases con ocupación" (redundante con la pestaña Agenda).
-- Nueva sección **"Hoy"** que muestra las sesiones del día actual con hora, nombre y alumnos apuntados. Si no hay sesiones hoy, muestra las 2 próximas.
-- Navegación correcta desde los enlaces del home hacia las pestañas del bottom bar.
-
-### Vista de Agenda del entrenador
-
-- Lista de sesiones de los **próximos 14 días** ordenada por fecha y hora.
-- Cabeceras de fecha con etiquetas contextuales ("Hoy", "Mañana", "Jueves 12 Jun…").
-- Ocupación visible en cada sesión (alumnos apuntados / plazas máximas) con indicador rojo si está llena.
-- Al pulsar una sesión se abre un bottom sheet con la **lista de alumnos** apuntados (nombre e inicial).
-- El ViewModel se comparte entre el Home y la pestaña Agenda para evitar llamadas duplicadas a la API.
-
-### Nuevo Perfil del entrenador
-
-- **Avatar** con la inicial del nombre en lugar del icono genérico.
-- **Especialidad** como chip junto al badge de rol, en lugar de una card independiente.
-- Eliminada la sección "Sobre mí" (irrelevante para el entrenador en su propio perfil).
-- **Stats diarios en tiempo real:**
-  - Sesiones restantes hoy
-  - Alumnos para hoy (suma de alumnos en sesiones restantes)
-  - Rutinas publicadas
-
-### Corrección de errores
-
-- **Campos mal mapeados:** `date` → `scheduled_at`, `max_students` → `max_capacity`, `speciality` → `specialty` corregidos con `@SerializedName`.
-- **"Próxima clase" del alumno** ordenada cronológicamente en lugar de mostrar el primer elemento de la lista.
-- **Error de suscripción silenciado:** un error de red ya no se muestra como "sin suscripción activa".
-- **BookingViewModel compartido** entre pestañas para mantener el contador de reservas activas sincronizado.
-- **Navegación del home** corregida para usar las mismas opciones que el bottom bar (`popUpTo`, `launchSingleTop`, `restoreState`).
-- **Elevación de cards** reducida a 0dp para eliminar el efecto de borde grueso causado por el overlay tonal de Material You.
