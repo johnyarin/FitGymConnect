@@ -72,7 +72,14 @@ fun TrainerMainScreen(onLogout: () -> Unit) {
                                 }
                             },
                             icon  = { Icon(item.icon, contentDescription = null) },
-                            label = { Text(item.label) }
+                            label = { Text(item.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor        = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor     = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor     = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor   = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor   = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         )
                     }
                 }

@@ -2,10 +2,20 @@ package com.example.fitgymconnect.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Brand orange (from logo)
+val OrangePrimary     = Color(0xFFFF6200)
+val OrangeLight       = Color(0xFFFFB59A)   // for dark theme primary
+val OrangeContainer   = Color(0xFFFFDBCC)   // light tint for containers
+val OrangeDark        = Color(0xFF832800)   // dark container for dark theme
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Neutrals
+val NearBlack         = Color(0xFF212121)
+val DarkGray          = Color(0xFF3D3D3D)
+val MidGray           = Color(0xFF757575)
+val LightGray         = Color(0xFFE8E8E8)
+val VeryLightGray     = Color(0xFFF5F5F5)
+
+// Backgrounds (dark theme)
+val DarkBackground    = Color(0xFF1A1A1A)
+val DarkSurface       = Color(0xFF242424)
+val DarkSurfaceVariant = Color(0xFF2E2E2E)

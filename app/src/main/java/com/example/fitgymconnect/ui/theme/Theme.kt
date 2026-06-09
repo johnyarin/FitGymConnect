@@ -1,54 +1,57 @@
 package com.example.fitgymconnect.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary              = OrangeLight,         // #FFB59A — legible sobre fondos oscuros
+    onPrimary            = Color(0xFF5C1900),
+    primaryContainer     = OrangeDark,          // #832800
+    onPrimaryContainer   = OrangeContainer,     // #FFDBCC
+    secondary            = LightGray,           // #E8E8E8
+    onSecondary          = NearBlack,
+    secondaryContainer   = DarkGray,            // #3D3D3D
+    onSecondaryContainer = LightGray,
+    tertiary             = OrangePrimary,
+    onTertiary           = Color.White,
+    background           = DarkBackground,      // #1A1A1A
+    onBackground         = LightGray,
+    surface              = DarkSurface,         // #242424
+    onSurface            = LightGray,
+    surfaceVariant       = DarkSurfaceVariant,  // #2E2E2E
+    onSurfaceVariant     = MidGray,
+    outline              = DarkGray,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary              = OrangePrimary,       // #FF6200
+    onPrimary            = Color.White,
+    primaryContainer     = OrangeContainer,     // #FFDBCC
+    onPrimaryContainer   = Color(0xFF3A1100),
+    secondary            = NearBlack,           // #212121
+    onSecondary          = Color.White,
+    secondaryContainer   = VeryLightGray,       // #F5F5F5
+    onSecondaryContainer = NearBlack,
+    tertiary             = OrangeDark,
+    onTertiary           = Color.White,
+    background           = Color.White,
+    onBackground         = NearBlack,
+    surface              = Color.White,
+    onSurface            = NearBlack,
+    surfaceVariant       = VeryLightGray,
+    onSurfaceVariant     = MidGray,
+    outline              = LightGray,
 )
 
 @Composable
 fun FitGymConnectTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
