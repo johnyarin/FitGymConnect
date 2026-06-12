@@ -39,7 +39,11 @@ class AuthRepository @Inject constructor(
                 tokenDataStore.saveSession(result.token, result.role, result.userId, result.userName, result.userEmail)
                 Result.Success(result)
             } else {
-                Result.Error("Credenciales incorrectas")
+                val error = if (response.code() == 403)
+                    "Tu cuenta ha sido desactivada. Contacta con el administrador."
+                else
+                    "Credenciales incorrectas"
+                Result.Error(error)
             }
         } catch (e: Exception) {
             Result.Error("Error de conexión")

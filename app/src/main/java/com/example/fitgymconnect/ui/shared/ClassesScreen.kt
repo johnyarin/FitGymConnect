@@ -126,16 +126,26 @@ fun ClassCard(
     showBookingButton: Boolean = false,
     hasActiveSubscription: Boolean = true,
     isProcessing: Boolean = false,
-    onBook: ((date: String, timeSlot: String) -> Unit)? = null
+    onBook: ((date: String, timeSlot: String) -> Unit)? = null,
+    availabilityViewModel: ClassDetailViewModel = hiltViewModel(key = "avail_${gymClass.id}")
 ) {
     val isOnline  = gymClass.type == "online"
     val cardColor = if (isOnline) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                     else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
 
+    val availability        by availabilityViewModel.availability.collectAsState()
+    val isLoadingAvailability by availabilityViewModel.isLoadingAvailability.collectAsState()
+
     val nextSlot = remember(gymClass.schedules) {
         nextBookingSlot(gymClass.schedules ?: emptyList())
     }
     val dateFormatter = DateTimeFormatter.ofPattern("EEE d MMM", Locale("es", "ES"))
+
+    LaunchedEffect(nextSlot) {
+        if (nextSlot != null && showBookingButton) {
+            availabilityViewModel.loadForSlot(gymClass.id, nextSlot.first, nextSlot.second)
+        }
+    }
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
@@ -162,7 +172,6 @@ fun ClassCard(
                 if (nextSlot == null) {
                     Text("Sin próximas fechas disponibles", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    // Próxima fecha
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                         Text(
@@ -171,21 +180,49 @@ fun ClassCard(
                         )
                     }
 
+                    // Aforo
+                    when {
+                        isLoadingAvailability -> {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                CircularProgressIndicator(modifier = Modifier.size(10.dp), strokeWidth = 1.5.dp)
+                                Text("Comprobando disponibilidad...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        availability != null -> {
+                            val isFull = availability!!.isFull
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(
+                                    Icons.Default.Group,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = if (isFull) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    if (isFull) "Clase completa"
+                                    else "${availability!!.availableSpots}/${availability!!.maxStudents} plazas disponibles",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isFull) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
                     if (!hasActiveSubscription) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Necesitas suscripción activa", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
+                        val isFull = availability?.isFull == true
                         Button(
                             onClick  = { onBook?.invoke(nextSlot.first.toString(), formatTimeSlot(nextSlot.second)) },
-                            enabled  = !isProcessing,
+                            enabled  = !isProcessing && !isFull && !isLoadingAvailability,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if (isProcessing)
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                             else
-                                Text("Reservar")
+                                Text(if (isFull) "Sin plazas" else "Reservar")
                         }
                     }
                 }

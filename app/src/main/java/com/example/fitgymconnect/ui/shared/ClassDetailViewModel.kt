@@ -53,6 +53,12 @@ class ClassDetailViewModel @Inject constructor(
         _isLoadingAvailability.value = false
     }
 
+    fun loadForSlot(classId: Int, date: LocalDate, timeSlot: String) {
+        _selectedDate.value = date
+        _selectedTimeSlot.value = timeSlot
+        loadAvailability(classId, date, timeSlot)
+    }
+
     fun reset() {
         _selectedDate.value = null
         _selectedTimeSlot.value = null
