@@ -1,5 +1,6 @@
 package com.example.fitgymconnect.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -8,9 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.fitgymconnect.ui.auth.EmailVerificationScreen
 import com.example.fitgymconnect.ui.auth.LoginScreen
 import com.example.fitgymconnect.ui.auth.RegisterScreen
 import com.example.fitgymconnect.ui.main.AuthState
@@ -20,11 +24,14 @@ import com.example.fitgymconnect.ui.student.StudentMainScreen
 import com.example.fitgymconnect.ui.trainer.TrainerMainScreen
 
 private object Routes {
-    const val SPLASH   = "splash"
-    const val LOGIN    = "login"
-    const val REGISTER = "register"
-    const val STUDENT  = "student"
-    const val TRAINER  = "trainer"
+    const val SPLASH             = "splash"
+    const val LOGIN              = "login"
+    const val REGISTER           = "register"
+    const val EMAIL_VERIFICATION = "email_verification/{email}"
+    const val STUDENT            = "student"
+    const val TRAINER            = "trainer"
+
+    fun emailVerification(email: String) = "email_verification/${Uri.encode(email)}"
 }
 
 @Composable
@@ -60,6 +67,9 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                         val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
                         navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
                     },
+                    onPendingVerification = { email ->
+                        navController.navigate(Routes.emailVerification(email))
+                    },
                     onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
                 )
             }
@@ -72,7 +82,31 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                         val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
                         navController.navigate(dest) { popUpTo(Routes.LOGIN) { inclusive = true } }
                     },
+                    onPendingVerification = { email ->
+                        navController.navigate(Routes.emailVerification(email)) {
+                            popUpTo(Routes.LOGIN) { inclusive = false }
+                        }
+                    },
                     onNavigateToLogin = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(
+            route = Routes.EMAIL_VERIFICATION,
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            FitGymConnectTheme(darkTheme = false) {
+                EmailVerificationScreen(
+                    email = email,
+                    onVerified = { role ->
+                        val dest = if (role == "trainer") Routes.TRAINER else Routes.STUDENT
+                        navController.navigate(dest) { popUpTo(0) { inclusive = true } }
+                    },
+                    onNavigateToLogin = {
+                        navController.navigate(Routes.LOGIN) { popUpTo(0) { inclusive = true } }
+                    }
                 )
             }
         }

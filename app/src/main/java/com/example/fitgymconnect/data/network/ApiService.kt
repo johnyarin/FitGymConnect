@@ -16,6 +16,9 @@ interface ApiService {
     @POST("api/logout")
     suspend fun logout(): Response<Unit>
 
+    @POST("api/email/resend")
+    suspend fun resendVerification(): Response<Unit>
+
     @GET("api/me")
     suspend fun me(): Response<User>
 
