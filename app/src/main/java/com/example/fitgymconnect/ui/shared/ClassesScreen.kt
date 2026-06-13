@@ -180,7 +180,6 @@ fun ClassCard(
                         )
                     }
 
-                    // Aforo
                     when {
                         isLoadingAvailability -> {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

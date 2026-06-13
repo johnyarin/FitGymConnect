@@ -40,7 +40,6 @@ fun StudentHomeScreen(
 
     val today = LocalDate.now().toString()
 
-    // Próximas 2 reservas a partir de hoy
     val upcomingBookings: List<Booking> = when (bookingState) {
         is BookingUiState.Success -> (bookingState as BookingUiState.Success).bookings
             .filter { it.status != "cancelled" && it.booking_date != null && it.booking_date >= today }
@@ -62,7 +61,6 @@ fun StudentHomeScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Saludo
         item {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -72,7 +70,6 @@ fun StudentHomeScreen(
             Text("¿Listo para entrenar hoy?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        // Banner suscripción
         if (subState is SubscriptionUiState.NoSubscription) {
             item {
                 Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
@@ -85,7 +82,6 @@ fun StudentHomeScreen(
             }
         }
 
-        // Próximas clases
         item {
             HomeSectionHeader(title = "Próximas clases")
             Spacer(Modifier.height(8.dp))
@@ -98,7 +94,6 @@ fun StudentHomeScreen(
             }
         }
 
-        // Rutinas para ti
         item {
             HomeSectionHeader(title = "Rutinas para ti")
             Spacer(Modifier.height(8.dp))

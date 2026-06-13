@@ -6,7 +6,6 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // Auth
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
@@ -22,7 +21,7 @@ interface ApiService {
     @GET("api/me")
     suspend fun me(): Response<User>
 
-    // Content (public)
+    // Contenido (endpoints públicos, sin autenticación requerida)
     @GET("api/routines")
     suspend fun getRoutines(): Response<List<Routine>>
 
@@ -39,7 +38,6 @@ interface ApiService {
         @Query("time_slot") timeSlot: String
     ): Response<ClassAvailability>
 
-    // Bookings
     @GET("api/bookings")
     suspend fun getBookings(): Response<List<Booking>>
 
@@ -49,7 +47,6 @@ interface ApiService {
     @DELETE("api/bookings/{id}")
     suspend fun cancelBooking(@Path("id") id: Int): Response<Unit>
 
-    // Subscription
     @GET("api/subscription")
     suspend fun getSubscription(): Response<Subscription>
 

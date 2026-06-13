@@ -51,6 +51,7 @@ fun StudentProfileScreen(
         else -> 0
     }
 
+    // Se captura antes de presentar el PaymentSheet porque el callback de Stripe no devuelve el secret original
     var capturedSecret by remember { mutableStateOf<String?>(null) }
     var showCancelDialog by remember { mutableStateOf(false) }
 
@@ -110,7 +111,6 @@ fun StudentProfileScreen(
 
         HorizontalDivider()
 
-        // Stat único — reservas activas
         Card(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.padding(16.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -120,7 +120,6 @@ fun StudentProfileScreen(
             }
         }
 
-        // Suscripción
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Suscripción", style = MaterialTheme.typography.titleMedium)
@@ -130,7 +129,7 @@ fun StudentProfileScreen(
 
                     is SubscriptionUiState.NoSubscription -> {
                         Text("Sin suscripción activa", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Accede a todas las clases en vivo por 9,99€/mes", style = MaterialTheme.typography.bodySmall)
+                        Text("Accede a las rutinas premium y personalizadas por 10€/mes", style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.height(4.dp))
                         Button(
                             onClick = { subscriptionViewModel.initiatePayment() },
@@ -138,7 +137,7 @@ fun StudentProfileScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if (isLoading) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                            else Text("Suscribirse — 9,99€/mes")
+                            else Text("Suscribirse — 10€/mes")
                         }
                     }
 

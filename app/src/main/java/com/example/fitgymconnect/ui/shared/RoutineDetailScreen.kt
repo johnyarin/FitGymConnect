@@ -53,7 +53,6 @@ fun RoutineDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Info de la rutina
             item {
                 Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(0.dp)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -99,7 +98,6 @@ fun RoutineDetailScreen(
                 }
             }
 
-            // Cabecera de ejercicios
             if (exercises.isNotEmpty()) {
                 item {
                     Text("Ejercicios", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp))
@@ -131,7 +129,6 @@ private fun ExerciseRow(exercise: Exercise, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Imagen del ejercicio
             if (exercise.image_url != null) {
                 AsyncImage(
                     model = exercise.image_url,
@@ -147,7 +144,6 @@ private fun ExerciseRow(exercise: Exercise, onClick: () -> Unit) {
                 }
             }
 
-            // Nombre + duración
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(exercise.name, style = MaterialTheme.typography.bodyLarge)
                 val parts = mutableListOf<String>()

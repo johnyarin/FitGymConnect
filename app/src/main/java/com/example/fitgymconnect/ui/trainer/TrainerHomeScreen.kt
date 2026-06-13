@@ -54,7 +54,6 @@ fun TrainerHomeScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Saludo
         item {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -68,7 +67,6 @@ fun TrainerHomeScreen(
             )
         }
 
-        // Sesiones de hoy / próximas
         item {
             HomeSectionHeader(
                 title = if (upcomingSessions.any { it.date == today }) "Hoy" else "Próximas sesiones",
@@ -90,7 +88,6 @@ fun TrainerHomeScreen(
             }
         }
 
-        // Mis rutinas
         item {
             HomeSectionHeader(title = "Mis rutinas", actionLabel = "Ver todas", onAction = onNavigateToRutinas)
             Spacer(Modifier.height(8.dp))

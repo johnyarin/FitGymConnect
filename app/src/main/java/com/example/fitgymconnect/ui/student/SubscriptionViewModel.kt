@@ -55,6 +55,7 @@ class SubscriptionViewModel @Inject constructor(
     }
 
     fun onPaymentSuccess(clientSecret: String) = viewModelScope.launch {
+        // Formato del secret de Stripe: "pi_xxx_secret_yyy" — el ID del PaymentIntent es el prefijo antes de "_secret_"
         val paymentIntentId = clientSecret.substringBefore("_secret_")
         _isLoading.value = true
         when (val r = repo.confirmSubscription(paymentIntentId)) {

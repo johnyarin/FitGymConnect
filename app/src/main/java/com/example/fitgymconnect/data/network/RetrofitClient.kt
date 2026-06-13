@@ -9,6 +9,7 @@ object RetrofitClient {
 
     private const val BASE_URL = "https://alumnojmya.me/"
 
+    // Level.BODY registra los payloads completos de cada petición — cambiar a NONE antes de publicar en producción
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }

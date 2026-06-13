@@ -61,7 +61,7 @@ fun TrainerProfileScreen(
         else -> 0
     }
 
-    // Specialty desde los datos de agenda
+    // Especialidad obtenida desde los datos de agenda, no del perfil directamente
     val specialty = agendaItems.firstOrNull()?.gymClass?.trainer?.specialty
 
     Column(
@@ -74,7 +74,6 @@ fun TrainerProfileScreen(
     ) {
         Spacer(Modifier.height(8.dp))
 
-        // Avatar con inicial
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(80.dp)) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
@@ -85,10 +84,8 @@ fun TrainerProfileScreen(
             }
         }
 
-        // Nombre
         Text(userName ?: "—", style = MaterialTheme.typography.headlineSmall)
 
-        // Badge rol + especialidad
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
                 Text("Entrenador", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -103,7 +100,6 @@ fun TrainerProfileScreen(
             }
         }
 
-        // Email
         userEmail?.let { email ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -113,7 +109,6 @@ fun TrainerProfileScreen(
 
         HorizontalDivider()
 
-        // Stats semanales
         Card(modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 StatColumn(value = "$remainingSessionsCount", label = "Sesiones\nrestantes hoy")

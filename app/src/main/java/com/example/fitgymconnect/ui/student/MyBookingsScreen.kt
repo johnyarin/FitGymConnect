@@ -107,7 +107,6 @@ fun BookingCard(booking: Booking, isProcessing: Boolean, onCancel: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = cardColor)) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
-            // Título + botón cancelar en la misma fila
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(gymClass?.title ?: "Clase reservada", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 TextButton(
@@ -121,7 +120,6 @@ fun BookingCard(booking: Booking, isProcessing: Boolean, onCancel: () -> Unit) {
                 }
             }
 
-            // Fecha y hora
             if (booking.booking_date != null && booking.time_slot != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
@@ -129,7 +127,6 @@ fun BookingCard(booking: Booking, isProcessing: Boolean, onCancel: () -> Unit) {
                 }
             }
 
-            // Entrenador
             gymClass?.trainer?.user?.name?.let { name ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)

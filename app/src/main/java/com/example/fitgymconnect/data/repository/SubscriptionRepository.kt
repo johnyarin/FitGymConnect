@@ -14,7 +14,7 @@ class SubscriptionRepository @Inject constructor(private val api: ApiService) {
         val r = api.getSubscription()
         when {
             r.isSuccessful    -> Result.Success(r.body())
-            r.code() == 404   -> Result.Success(null)
+            r.code() == 404   -> Result.Success(null)  // La API devuelve 404 cuando el usuario no tiene suscripción
             else              -> Result.Error("Error al cargar suscripción")
         }
     } catch (e: Exception) { Result.Error("Error de conexión") }

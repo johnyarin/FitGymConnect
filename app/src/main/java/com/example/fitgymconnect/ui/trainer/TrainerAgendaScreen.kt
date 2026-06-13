@@ -112,7 +112,6 @@ private fun AgendaCard(item: AgendaItem, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Hora
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(44.dp)) {
                 Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 Text(formatTimeSlot(item.schedule.timeSlot), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -120,10 +119,8 @@ private fun AgendaCard(item: AgendaItem, onClick: () -> Unit) {
 
             VerticalDivider(modifier = Modifier.height(36.dp))
 
-            // Nombre de la clase
             Text(item.gymClass.title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
 
-            // Ocupación
             Surface(
                 shape = MaterialTheme.shapes.small,
                 color = if (isFull) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
@@ -153,7 +150,6 @@ private fun StudentListBottomSheet(item: AgendaItem) {
             .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Cabecera
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(item.gymClass.title, style = MaterialTheme.typography.titleLarge)
             Text(
