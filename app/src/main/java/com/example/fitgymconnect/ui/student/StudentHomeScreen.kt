@@ -75,7 +75,7 @@ fun StudentHomeScreen(
                 Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Hazte Premium", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("Accede a todas las clases en vivo y rutinas premium por 9,99€/mes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Accede a las rutinas premium y personalizadas por 10€/mes", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Button(onClick = onNavigateToPerfil, modifier = Modifier.align(Alignment.End)) { Text("Ver planes") }
                     }
                 }

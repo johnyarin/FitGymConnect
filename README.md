@@ -50,7 +50,7 @@ FitGymConnect conecta alumnos y entrenadores en una misma plataforma: los alumno
 ### Backend
 | Tecnología | Versión | Uso |
 |---|---|---|
-| Laravel | 11 | Framework PHP principal |
+| Laravel | 13 | Framework PHP principal |
 | MySQL | 8.0 | Base de datos relacional |
 | Laravel Sanctum | — | Autenticación por tokens Bearer |
 | Stripe | Sandbox | Pagos y suscripciones |
